@@ -105,6 +105,10 @@ const badges = {
   }
 };
 
+app.get('/api/badges', (req, res) => {
+    res.json(badges);
+});
+
 app.post('/api/click-badge', (req, res) => {
   const { clickCount } = req.body;
   
@@ -148,56 +152,44 @@ app.post('/api/click-badge', (req, res) => {
 });
 
 app.post('/api/rate', (req, res) => {
-  const { imageUrl, rating } = req.body;
-  
-  if (!imageUrl || !rating || rating < 1 || rating > 10) {
-    return res.status(400).json({ error: 'Invalid rating data' });
-  }
-  
-  const ratings = readRatings();
-  
-  if (!ratings[imageUrl]) {
-    ratings[imageUrl] = [];
-  }
-  
-  ratings[imageUrl].push(parseInt(rating));
-  writeRatings(ratings);
-  
-  // Track session ratings - initialize as Set if not exists
-  if (!req.session.ratedDucks) {
-    req.session.ratedDucks = [];
-  }
-  
-  // Convert to Set for easy manipulation, then back to array for session storage
-  const ratedDucksSet = new Set(req.session.ratedDucks);
-  ratedDucksSet.add(imageUrl);
-  req.session.ratedDucks = Array.from(ratedDucksSet);
-  
-  const ratedCount = req.session.ratedDucks.length;
-  
-  // Check for new badges
-  const newBadge = Object.keys(badges)
-    .filter(threshold => threshold <= ratedCount)
-    .map(threshold => badges[threshold])
-    .find(badge => !req.session.earnedBadges?.includes(badge.name));
-  
-  // Initialize earned badges if needed
-  if (!req.session.earnedBadges) {
-    req.session.earnedBadges = [];
-  }
-  
-  // If new badge earned, add it to session
-  if (newBadge && !req.session.earnedBadges.includes(newBadge.name)) {
-    req.session.earnedBadges.push(newBadge.name);
-  }
-  
-  res.json({ 
-    success: true, 
-    averageRating: calculateAverage(ratings[imageUrl]),
-    count: ratings[imageUrl].length,
-    ratedCount: ratedCount,
-    newBadge: newBadge || null
-  });
+    const { imageUrl, rating } = req.body;
+    if (!imageUrl || !rating || rating < 1 || rating > 10) {
+        return res.status(400).json({ error: 'Invalid rating data' });
+    }
+    const ratings = readRatings();
+    if (!ratings[imageUrl]) {
+        ratings[imageUrl] = [];
+    }
+    ratings[imageUrl].push(parseInt(rating));
+    writeRatings(ratings);
+    
+    // Track session ratings
+    if (!req.session.ratedDucks) {
+        req.session.ratedDucks = [];
+    }
+    const ratedDucksSet = new Set(req.session.ratedDucks);
+    ratedDucksSet.add(imageUrl);
+    req.session.ratedDucks = Array.from(ratedDucksSet);
+    const ratedCount = req.session.ratedDucks.length;
+    
+    // Check for new badges
+    let newBadge = null;
+    Object.keys(badges).forEach(threshold => {
+        const numThreshold = parseInt(threshold);
+        if (numThreshold <= ratedCount && !req.session.earnedBadges?.includes(badges[numThreshold].name)) {
+            newBadge = badges[numThreshold];
+            if (!req.session.earnedBadges) req.session.earnedBadges = [];
+            req.session.earnedBadges.push(newBadge.name);
+        }
+    });
+    
+    res.json({
+        success: true,
+        averageRating: calculateAverage(ratings[imageUrl]),
+        count: ratings[imageUrl].length,
+        ratedCount: ratedCount,
+        newBadge: newBadge || null
+    });
 });
 
 // API Endpoint: Get ratings for an image
@@ -368,6 +360,89 @@ app.get('/duck', (req, res) => {
         #duck-image:active {
           transform: scale(0.98);
         }
+
+        /* Achievements Menu Styles */
+        .achievements-menu {
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          z-index: 1000;
+        }
+
+        .menu-button {
+          background: #66bb6a;
+          color: white;
+          border: none;
+          border-radius: 50%;
+          width: 40px;
+          height: 40px;
+          font-size: 20px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .menu-button:hover {
+          background: #4caf50;
+        }
+
+        .achievements-panel {
+          position: absolute;
+          top: 50px;
+          right: 0;
+          background: white;
+          border-radius: 8px;
+          box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+          padding: 15px;
+          width: 300px;
+          max-height: 80vh;
+          overflow-y: auto;
+          display: none;
+        }
+
+        .achievements-panel.show {
+          display: block;
+        }
+
+        .achievements-panel h3 {
+          margin-top: 0;
+          color: #66bb6a;
+          border-bottom: 1px solid #eee;
+          padding-bottom: 10px;
+        }
+
+        .badge-item {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin: 10px 0;
+          padding: 10px;
+          border-radius: 5px;
+        }
+
+        .badge-item.locked {
+          opacity: 0.5;
+        }
+
+        .badge-item img {
+          width: 40px;
+          height: 40px;
+        }
+
+        .badge-info {
+          flex-grow: 1;
+        }
+
+        .badge-name {
+          font-weight: bold;
+        }
+
+        .badge-desc {
+          font-size: 0.8em;
+          color: #666;
+        }
       </style>
     </head>
     <body>
@@ -388,9 +463,48 @@ app.get('/duck', (req, res) => {
         <button type="submit">New Duck</button>
       </form>
 
+      <!-- Achievements Menu -->
+      <div class="achievements-menu">
+        <button class="menu-button" id="menu-button">🏆</button>
+        <div class="achievements-panel" id="achievements-panel">
+          <h3>Your Achievements</h3>
+          <div id="badges-list">
+            <!-- Badges will be populated here -->
+          </div>
+        </div>
+      </div>
+
       <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
       
       <script>
+        let earnedBadges = JSON.parse(sessionStorage.getItem('earnedBadges') || '[]');
+        let badges = {};
+        async function loadBadges() {
+            try {
+                const response = await fetch('/api/badges');
+                badges = await response.json();
+            } catch (error) {
+                console.error('Error loading badges:', error);
+                // Provide default badges if loading fails
+                badges = {
+                    1: { name: "Duck Starter", description: "Rated your first duck!", image: "assets/badges/badge-1.png" },
+                    10: { name: "Duck Enthusiast", description: "Rated 10 ducks!", image: "assets/badges/badge-2.png" },
+                    25: { name: "Duck Master", description: "Rated 25 ducks!", image: "assets/badges/badge-3.png" },
+                    50: { name: "Duck Legend", description: "Rated 50 ducks!", image: "assets/badges/badge-4.png" },
+                    first_click: { name: "Duck Clicker", description: "Clicked your first duck!", image: "assets/badges/badge-4.png" },
+                    fifty_click: { name: "Duck Whisperer", description: "Clicked ducks 50 times!", image: "assets/badges/badge-5.png" },
+                    hundret_click: { name: "Quack Master", description: "Clicked ducks 100 times!", image: "assets/badges/badge-6.png" },
+                    thousand_click: { name: "Quack Legend", description: "Clicked ducks 1000 times!", image: "assets/badges/badge-7.png" }
+                };
+            }
+        }
+
+        // Call this when your page loads
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadBadges();
+            updateBadgesList();
+        });
+        
         const duckImage = document.getElementById('duck-image');
         const ratingInfo = document.getElementById('rating-info');
         const ratingButtons = document.getElementById('rating-buttons');
@@ -430,7 +544,6 @@ app.get('/duck', (req, res) => {
           .then(data => {
             if (data.count > 0) {
               ratingInfo.textContent = \`Average rating: \${data.average} (from \${data.count} votes)\`;
-              //disableAllRatingButtons();
             }
           });
         
@@ -481,7 +594,10 @@ app.get('/duck', (req, res) => {
               
               // Show badge notification if earned
               if (result.newBadge) {
+                earnedBadges.push(result.newBadge.name);
+                sessionStorage.setItem('earnedBadges', JSON.stringify(earnedBadges));
                 showBadgeNotification(result.newBadge);
+                updateBadgesList();
               }
             }
           } catch (error) {
@@ -506,28 +622,76 @@ app.get('/duck', (req, res) => {
             sessionStorage.duckClicks = clickCount;
             
             // Check for badge eligibility
-            if (clickCount === 1 || clickCount === 50 || clickCount === 100 || clickCount === 1000) {
-              try {
-                const response = await fetch('/api/click-badge', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({
-                    clickCount: clickCount
-                  })
-                });
-                
-                const result = await response.json();
-                
-                if (result.newBadge) {
-                  showBadgeNotification(result.newBadge);
+            if ([1, 50, 100, 1000].includes(clickCount)) {
+                try {
+                    const response = await fetch('/api/click-badge', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            clickCount: clickCount
+                        })
+                    });
+                    const result = await response.json();
+                    
+                    // Update sessionStorage with earned badges
+                    if (result.newBadge) {
+                        const earnedBadges = JSON.parse(sessionStorage.getItem('earnedBadges') || '[]');
+                        earnedBadges.push(result.newBadge.name);
+                        sessionStorage.setItem('earnedBadges', JSON.stringify(earnedBadges));
+                        
+                        // Show notification and update UI
+                        showBadgeNotification(result.newBadge);
+                        updateBadgesList();
+                    }
+                } catch (error) {
+                    console.error('Error reporting click:', error);
                 }
-              } catch (error) {
-                console.error('Error reporting click:', error);
-              }
+            }
+        });
+
+          // Achievements Menu Functionality
+          const menuButton = document.getElementById('menu-button');
+          const achievementsPanel = document.getElementById('achievements-panel');
+          const badgesList = document.getElementById('badges-list');
+
+          // Toggle menu visibility
+          menuButton.addEventListener('click', () => {
+            achievementsPanel.classList.toggle('show');
+          });
+
+          // Close menu when clicking outside
+          document.addEventListener('click', (e) => {
+            if (!menuButton.contains(e.target) && !achievementsPanel.contains(e.target)) {
+              achievementsPanel.classList.remove('show');
             }
           });
+
+          // Function to update the badges list
+          function updateBadgesList() {
+            // Get earned badges from sessionStorage
+            const earnedBadges = JSON.parse(sessionStorage.getItem('earnedBadges') || '[]');
+            
+            // Clear existing badges
+            badgesList.innerHTML = '';
+            
+            // Add all possible badges to the list
+            Object.values(badges).forEach(badge => {
+                const isEarned = earnedBadges.includes(badge.name);
+                const badgeItem = document.createElement('div');
+                badgeItem.className = 'badge-item ' + (isEarned ? '' : 'locked');
+                badgeItem.innerHTML =
+                    '<img src="' + badge.image + '" alt="' + badge.name + '">' +
+                    '<div class="badge-info">' +
+                        '<div class="badge-name">' + badge.name + '</div>' +
+                        '<div class="badge-desc">' + badge.description + '</div>' +
+                    '</div>' +
+                    (isEarned ? '✅' : '🔒');
+                badgesList.appendChild(badgeItem);
+            });
+        }
+
       </script>
       <div id="badge-notification-container"></div>
     </body>
