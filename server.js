@@ -1,4 +1,6 @@
+require('dotenv').config();
 const express = require('express');
+const session = require('express-session');
 const path = require('path');
 const fs = require('fs');
 
@@ -51,7 +53,38 @@ function writeRatings(ratings) {
   }
 }
 
-// API Endpoint: Save rating for an image
+// Add session middleware (before your routes)
+app.use(session({
+  secret: process.env.SESSION_SECRET, // Change this to a real secret in production
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: false } // Set to true if using HTTPS
+}));
+
+// Define badge information
+const badges = {
+  1: {
+    name: "Duck Starter",
+    description: "Rated your first duck!",
+    image: "assets/badges/badge-1.png"
+  },
+  10: {
+    name: "Duck Enthusiast",
+    description: "Rated 10 ducks!",
+    image: "assets/badges/badge-2.png"
+  },
+  25: {
+    name: "Duck Master",
+    description: "Rated 25 ducks!",
+    image: "assets/badges/badge-3.png"
+  },
+  50: {
+    name: "Duck Legend",
+    description: "Rated 50 ducks!",
+    image: "assets/badges/badge-4.png"
+  }
+};
+
 app.post('/api/rate', (req, res) => {
   const { imageUrl, rating } = req.body;
   
@@ -68,10 +101,40 @@ app.post('/api/rate', (req, res) => {
   ratings[imageUrl].push(parseInt(rating));
   writeRatings(ratings);
   
+  // Track session ratings - initialize as Set if not exists
+  if (!req.session.ratedDucks) {
+    req.session.ratedDucks = [];
+  }
+  
+  // Convert to Set for easy manipulation, then back to array for session storage
+  const ratedDucksSet = new Set(req.session.ratedDucks);
+  ratedDucksSet.add(imageUrl);
+  req.session.ratedDucks = Array.from(ratedDucksSet);
+  
+  const ratedCount = req.session.ratedDucks.length;
+  
+  // Check for new badges
+  const newBadge = Object.keys(badges)
+    .filter(threshold => threshold <= ratedCount)
+    .map(threshold => badges[threshold])
+    .find(badge => !req.session.earnedBadges?.includes(badge.name));
+  
+  // Initialize earned badges if needed
+  if (!req.session.earnedBadges) {
+    req.session.earnedBadges = [];
+  }
+  
+  // If new badge earned, add it to session
+  if (newBadge && !req.session.earnedBadges.includes(newBadge.name)) {
+    req.session.earnedBadges.push(newBadge.name);
+  }
+  
   res.json({ 
     success: true, 
     averageRating: calculateAverage(ratings[imageUrl]),
-    count: ratings[imageUrl].length
+    count: ratings[imageUrl].length,
+    ratedCount: ratedCount,
+    newBadge: newBadge || null
   });
 });
 
@@ -124,7 +187,7 @@ app.get('/duck', (req, res) => {
     <head>
       <meta charset="UTF-8">
       <title>🦆 Random Duck API</title>
-      <link rel="icon" href="/favicon.ico" type="image/x-icon">
+      <link rel="icon" href="/assets/favicon.ico" type="image/x-icon">
       <style>
         body {
           font-family: sans-serif;
@@ -192,6 +255,46 @@ app.get('/duck', (req, res) => {
           font-size: 0.9em;
           color: #666;
         }
+        .badge-notification {
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background: white;
+          padding: 15px;
+          border-radius: 8px;
+          box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          transform: translateX(200%);
+          transition: transform 0.3s ease-out;
+          z-index: 1000;
+          border-left: 5px solid #66bb6a;
+        }
+        
+        .badge-notification.show {
+          transform: translateX(0);
+        }
+        
+        .badge-notification img {
+          width: 40px;
+          height: 40px;
+        }
+        
+        .badge-notification .badge-content {
+          display: flex;
+          flex-direction: column;
+        }
+        
+        .badge-notification .badge-title {
+          font-weight: bold;
+          font-size: 1.1em;
+        }
+        
+        .badge-notification .badge-desc {
+          font-size: 0.8em;
+          color: #666;
+        }
       </style>
     </head>
     <body>
@@ -218,6 +321,34 @@ app.get('/duck', (req, res) => {
         const ratingInfo = document.getElementById('rating-info');
         const ratingButtons = document.getElementById('rating-buttons');
         const currentImageUrl = duckImage.src;
+
+        function showBadgeNotification(badge) {
+          const container = document.getElementById('badge-notification-container');
+          
+          const notification = document.createElement('div');
+          notification.className = 'badge-notification';
+          notification.innerHTML = 
+            '<img src="' + badge.image + '" alt="' + badge.name + '">' +
+            '<div class="badge-content">' +
+              '<div class="badge-title">' + badge.name + '</div>' +
+              '<div class="badge-desc">' + badge.description + '</div>' +
+            '</div>';
+          
+          container.appendChild(notification);
+          
+          // Trigger the animation
+          setTimeout(() => {
+            notification.classList.add('show');
+          }, 10);
+          
+          // Auto-hide after 5 seconds
+          setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => {
+              notification.remove();
+            }, 300);
+          }, 5000);
+        }
         
         // Load existing ratings
         fetch(\`/api/ratings?imageUrl=\${encodeURIComponent(currentImageUrl)}\`)
@@ -267,10 +398,17 @@ app.get('/duck', (req, res) => {
               });
               
               // Update rating info
-              ratingInfo.textContent = \`You rated this duck \${rating}. The average rating of this duck is: \${result.averageRating} (from \${result.count} votes)\`;
-              
+              ratingInfo.textContent = 'You rated this duck ' + rating + 
+              '. The average rating of this duck is: ' + result.averageRating + 
+              ' (from ' + result.count + ' votes)';
+
               // Disable all rating buttons
               disableAllRatingButtons();
+              
+              // Show badge notification if earned
+              if (result.newBadge) {
+                showBadgeNotification(result.newBadge);
+              }
             }
           } catch (error) {
             console.error('Error submitting rating:', error);
@@ -278,6 +416,7 @@ app.get('/duck', (req, res) => {
           }
         });
       </script>
+      <div id="badge-notification-container"></div>
     </body>
     </html>
   `);
