@@ -109,53 +109,13 @@ app.get('/api/badges', (req, res) => {
     res.json(badges);
 });
 
-app.post('/api/click-badge', (req, res) => {
-  const { clickCount } = req.body;
-  
-  // Initialize session click tracking if needed
-  if (!req.session.duckClicks) {
-    req.session.duckClicks = 0;
-  }
-  
-  // Update click count
-  req.session.duckClicks = Math.max(req.session.duckClicks, clickCount);
-  
-  let newBadge = null;
-  
-  // Check for badge eligibility
-  if (clickCount === 1 && !req.session.earnedBadges?.includes('Duck Clicker')) {
-    newBadge = badges.first_click;
-    if (!req.session.earnedBadges) req.session.earnedBadges = [];
-    req.session.earnedBadges.push(newBadge.name);
-  } 
-  else if (clickCount >= 50 && !req.session.earnedBadges?.includes('Duck Whisperer')) {
-    newBadge = badges['fifty_click'];
-    if (!req.session.earnedBadges) req.session.earnedBadges = [];
-    req.session.earnedBadges.push(newBadge.name);
-  }
-  else if (clickCount >= 100 && !req.session.earnedBadges?.includes('Quack Master')) {
-    newBadge = badges['hundret_click'];
-    if (!req.session.earnedBadges) req.session.earnedBadges = [];
-    req.session.earnedBadges.push(newBadge.name);
-  }
-  else if (clickCount >= 1000 && !req.session.earnedBadges?.includes('Quack Legend')) {
-    newBadge = badges['thousand_click'];
-    if (!req.session.earnedBadges) req.session.earnedBadges = [];
-    req.session.earnedBadges.push(newBadge.name);
-  }
-  
-  res.json({
-    success: true,
-    newBadge: newBadge || null,
-    totalClicks: req.session.duckClicks
-  });
-});
-
+// In your /api/rate endpoint:
 app.post('/api/rate', (req, res) => {
     const { imageUrl, rating } = req.body;
     if (!imageUrl || !rating || rating < 1 || rating > 10) {
         return res.status(400).json({ error: 'Invalid rating data' });
     }
+    
     const ratings = readRatings();
     if (!ratings[imageUrl]) {
         ratings[imageUrl] = [];
@@ -178,7 +138,9 @@ app.post('/api/rate', (req, res) => {
         const numThreshold = parseInt(threshold);
         if (numThreshold <= ratedCount && !req.session.earnedBadges?.includes(badges[numThreshold].name)) {
             newBadge = badges[numThreshold];
-            if (!req.session.earnedBadges) req.session.earnedBadges = [];
+            if (!req.session.earnedBadges) {
+                req.session.earnedBadges = [];
+            }
             req.session.earnedBadges.push(newBadge.name);
         }
     });
@@ -189,6 +151,40 @@ app.post('/api/rate', (req, res) => {
         count: ratings[imageUrl].length,
         ratedCount: ratedCount,
         newBadge: newBadge || null
+    });
+});
+
+// In your /api/click-badge endpoint:
+app.post('/api/click-badge', (req, res) => {
+    const { clickCount } = req.body;
+    if (!req.session.duckClicks) {
+        req.session.duckClicks = 0;
+    }
+    req.session.duckClicks = Math.max(req.session.duckClicks, clickCount);
+    
+    let newBadge = null;
+    if (clickCount === 1 && !req.session.earnedBadges?.includes('Duck Clicker')) {
+        newBadge = badges.first_click;
+        if (!req.session.earnedBadges) req.session.earnedBadges = [];
+        req.session.earnedBadges.push(newBadge.name);
+    } else if (clickCount >= 50 && !req.session.earnedBadges?.includes('Duck Whisperer')) {
+        newBadge = badges['fifty_click'];
+        if (!req.session.earnedBadges) req.session.earnedBadges = [];
+        req.session.earnedBadges.push(newBadge.name);
+    } else if (clickCount >= 100 && !req.session.earnedBadges?.includes('Quack Master')) {
+        newBadge = badges['hundret_click'];
+        if (!req.session.earnedBadges) req.session.earnedBadges = [];
+        req.session.earnedBadges.push(newBadge.name);
+    } else if (clickCount >= 1000 && !req.session.earnedBadges?.includes('Quack Legend')) {
+        newBadge = badges['thousand_click'];
+        if (!req.session.earnedBadges) req.session.earnedBadges = [];
+        req.session.earnedBadges.push(newBadge.name);
+    }
+    
+    res.json({
+        success: true,
+        newBadge: newBadge || null,
+        totalClicks: req.session.duckClicks
     });
 });
 
