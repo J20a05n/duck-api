@@ -82,8 +82,70 @@ const badges = {
     name: "Duck Legend",
     description: "Rated 50 ducks!",
     image: "assets/badges/badge-4.png"
+  },
+  first_click: {
+    name: "Duck Clicker",
+    description: "Clicked your first duck!",
+    image: "assets/badges/badge-4.png"
+  },
+  fifty_click: {
+    name: "Duck Whisperer",
+    description: "Clicked ducks 50 times!",
+    image: "assets/badges/badge-5.png"
+  },
+  hundret_click: {
+    name: "Quack Master",
+    description: "Clicked ducks 100 times!",
+    image: "assets/badges/badge-6.png"
+  },
+  thousand_click: {
+    name: "Quack Legend",
+    description: "Clicked ducks 1000 times!",
+    image: "assets/badges/badge-7.png"
   }
 };
+
+app.post('/api/click-badge', (req, res) => {
+  const { clickCount } = req.body;
+  
+  // Initialize session click tracking if needed
+  if (!req.session.duckClicks) {
+    req.session.duckClicks = 0;
+  }
+  
+  // Update click count
+  req.session.duckClicks = Math.max(req.session.duckClicks, clickCount);
+  
+  let newBadge = null;
+  
+  // Check for badge eligibility
+  if (clickCount === 1 && !req.session.earnedBadges?.includes('Duck Clicker')) {
+    newBadge = badges.first_click;
+    if (!req.session.earnedBadges) req.session.earnedBadges = [];
+    req.session.earnedBadges.push(newBadge.name);
+  } 
+  else if (clickCount >= 50 && !req.session.earnedBadges?.includes('Duck Whisperer')) {
+    newBadge = badges['fifty_click'];
+    if (!req.session.earnedBadges) req.session.earnedBadges = [];
+    req.session.earnedBadges.push(newBadge.name);
+  }
+  else if (clickCount >= 100 && !req.session.earnedBadges?.includes('Quack Master')) {
+    newBadge = badges['hundret_click'];
+    if (!req.session.earnedBadges) req.session.earnedBadges = [];
+    req.session.earnedBadges.push(newBadge.name);
+  }
+  else if (clickCount >= 1000 && !req.session.earnedBadges?.includes('Quack Legend')) {
+    newBadge = badges['thousand_click'];
+    if (!req.session.earnedBadges) req.session.earnedBadges = [];
+    req.session.earnedBadges.push(newBadge.name);
+  }
+  
+  res.json({
+    success: true,
+    newBadge: newBadge || null,
+    totalClicks: req.session.duckClicks
+  });
+});
 
 app.post('/api/rate', (req, res) => {
   const { imageUrl, rating } = req.body;
@@ -295,9 +357,21 @@ app.get('/duck', (req, res) => {
           font-size: 0.8em;
           color: #666;
         }
+        
+        #duck-image {
+          cursor: pointer;
+          transition: transform 0.2s;
+        }
+        #duck-image:hover {
+          transform: scale(1.02);
+        }
+        #duck-image:active {
+          transform: scale(0.98);
+        }
       </style>
     </head>
     <body>
+      <audio id="quack-sound" src="/sounds/quack.mp3" preload="auto"></audio>
       <h1>Here's a duck for you 🦆</h1>
       <img src="${fullUrl}" alt="Random duck" id="duck-image" />
       <div class="rating-container">
@@ -415,6 +489,45 @@ app.get('/duck', (req, res) => {
             ratingInfo.textContent = 'Error submitting rating. Please try again.';
           }
         });
+          const quackSound = document.getElementById('quack-sound');
+          
+          // Track clicks in sessionStorage
+          if (!sessionStorage.duckClicks) {
+            sessionStorage.duckClicks = 0;
+          }
+          
+          duckImage.addEventListener('click', async function() {
+            // Play quack sound
+            quackSound.currentTime = 0;
+            quackSound.play();
+            
+            // Increment click count
+            const clickCount = parseInt(sessionStorage.duckClicks) + 1;
+            sessionStorage.duckClicks = clickCount;
+            
+            // Check for badge eligibility
+            if (clickCount === 1 || clickCount === 50 || clickCount === 100 || clickCount === 1000) {
+              try {
+                const response = await fetch('/api/click-badge', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    clickCount: clickCount
+                  })
+                });
+                
+                const result = await response.json();
+                
+                if (result.newBadge) {
+                  showBadgeNotification(result.newBadge);
+                }
+              } catch (error) {
+                console.error('Error reporting click:', error);
+              }
+            }
+          });
       </script>
       <div id="badge-notification-container"></div>
     </body>
