@@ -192,6 +192,34 @@ app.post('/api/rate', (req, res) => {
     });
 });
 
+app.get('/api/custom-duck-button-1', (req, res) => {
+  const earnedBadges = req.session?.earnedBadges || [];
+  res.json({
+  shouldShowCustomButton: earnedBadges.length >= 1
+  });
+});
+
+app.get('/api/custom-duck-button-2', (req, res) => {
+    const earnedBadges = req.session?.earnedBadges || [];
+    res.json({
+        shouldShowCustomButton: earnedBadges.length >= 4
+    });
+});
+
+app.get('/api/custom-duck-button-3', (req, res) => {
+    const earnedBadges = req.session?.earnedBadges || [];
+    res.json({
+        shouldShowCustomButton: earnedBadges.length >= 5
+    });
+});
+
+app.get('/api/custom-duck-button-4', (req, res) => {
+    const earnedBadges = req.session?.earnedBadges || [];
+    res.json({
+        shouldShowCustomButton: earnedBadges.length >= 6
+    });
+});
+
 // API Endpoint: Get ratings for an image
 app.get('/api/ratings', (req, res) => {
   const { imageUrl } = req.query;
@@ -267,9 +295,82 @@ app.get('/duck', (req, res) => {
         button:hover {
           background-color: #4caf50;
         }
+
+        .new-duck-button {
+            width: 300px;
+            height: 50px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            padding: 0 20px;
+        }
+
+        /* Base custom button styles */
+        .new-duck-button.custom,
+        .new-duck-button.custom-2,
+        .new-duck-button.custom-3,
+        .new-duck-button.custom-4 {
+            background-color: transparent;
+            color: transparent;
+        }
+
+        /* Custom button styles - each builds on the previous */
+        .new-duck-button.custom {
+            background-image: url('/assets/custom-duck-button_1.png');
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .new-duck-button.custom-2 {
+            background-image: url('/assets/custom-duck-button_2.png');
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .new-duck-button.custom-3 {
+            background-image: url('/assets/custom-duck-button_3.png');
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .new-duck-button.custom-4 {
+            background-image: url('/assets/custom-duck-button_4.png');
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        /* Common styles */
+        .new-duck-button.custom:hover,
+        .new-duck-button.custom-2:hover,
+        .new-duck-button.custom-3:hover,
+        .new-duck-button.custom-4:hover {
+            filter: brightness(110%);
+        }
+
+        .new-duck-button.custom::after,
+        .new-duck-button.custom-2::after,
+        .new-duck-button.custom-3::after,
+        .new-duck-button.custom-4::after {
+            content: '🦆';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 20px;
+            pointer-events: none;
+            opacity: 0.8;
+        }
+
         .rating-container {
           margin: 20px 0;
         }
+
         .rating-buttons {
           display: flex;
           justify-content: center;
@@ -499,10 +600,30 @@ app.get('/duck', (req, res) => {
             }
         }
 
+        function updateNewDuckButton() {
+          const newDuckButton = document.querySelector('form[action="/duck"] button');
+          const earnedBadges = JSON.parse(sessionStorage.getItem('earnedBadges') || '[]');
+          
+          // Remove all custom classes
+          newDuckButton.classList.remove('custom', 'custom-2', 'custom-3', 'custom-4');
+          
+          // Apply appropriate class based on number of achievements
+          if (earnedBadges.length >= 7) {
+              newDuckButton.classList.add('custom-4', 'new-duck-button');
+          } else if (earnedBadges.length >= 5) {
+              newDuckButton.classList.add('custom-3', 'new-duck-button');
+          } else if (earnedBadges.length >= 3) {
+              newDuckButton.classList.add('custom-2', 'new-duck-button');
+          } else if (earnedBadges.length >= 1) {
+              newDuckButton.classList.add('custom', 'new-duck-button');
+          }
+      }
+
         // Call this when your page loads
         document.addEventListener('DOMContentLoaded', async () => {
             await loadBadges();
             updateBadgesList();
+            updateNewDuckButton()
         });
         
         const duckImage = document.getElementById('duck-image');
@@ -598,6 +719,7 @@ app.get('/duck', (req, res) => {
                 sessionStorage.setItem('earnedBadges', JSON.stringify(earnedBadges));
                 showBadgeNotification(result.newBadge);
                 updateBadgesList();
+                updateNewDuckButton();
               }
             }
           } catch (error) {
@@ -657,7 +779,9 @@ app.get('/duck', (req, res) => {
           const badgesList = document.getElementById('badges-list');
 
           // Toggle menu visibility
-          menuButton.addEventListener('click', () => {
+          menuButton.addEventListener('click', async () => {
+            await loadBadges();
+            updateBadgesList();
             achievementsPanel.classList.toggle('show');
           });
 
