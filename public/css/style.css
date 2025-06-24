@@ -1,0 +1,280 @@
+body {
+  font-family: sans-serif;
+  text-align: center;
+  padding: 2rem;
+  background:rgb(221, 251, 234);
+}
+
+img {
+  max-width: 90vw;
+  height: auto;
+  border-radius: 8px;
+}
+
+button {
+  margin-top: 1rem;
+  padding: 10px 20px;
+  font-size: 1rem;
+  background-color: #66bb6a;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #4caf50;
+}
+
+/* New duck button styles */
+#new-duck-button {
+  width: 300px;
+  height: 50px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  padding: 0 20px;
+  transition: all 0.3s;
+}
+
+/* Base custom button styles */
+#new-duck-button.custom,
+#new-duck-button.custom-2,
+#new-duck-button.custom-3,
+#new-duck-button.custom-4 {
+  background-color: transparent !important;
+  color: transparent !important;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+#new-duck-button.custom {
+  background-image: url('/assets/custom-duck-button_1.png');
+}
+
+#new-duck-button.custom-2 {
+  background-image: url('/assets/custom-duck-button_2.png');
+}
+
+#new-duck-button.custom-3 {
+  background-image: url('/assets/custom-duck-button_3.png');
+}
+
+#new-duck-button.custom-4 {
+  background-image: url('/assets/custom-duck-button_4.png');
+}
+
+/* Remove the duck emoji when custom classes are applied */
+#new-duck-button.custom::after,
+#new-duck-button.custom-2::after,
+#new-duck-button.custom-3::after,
+#new-duck-button.custom-4::after {
+  content: none;
+}
+
+/* Common styles */
+#new-duck-button.custom:hover,
+#new-duck-button.custom-2:hover,
+#new-duck-button.custom-3:hover,
+#new-duck-button.custom-4:hover {
+  filter: brightness(110%);
+}
+
+#new-duck-button::after {
+  content: '🦆';
+  position: absolute;
+  top: 50%;
+  left: 70%;
+  transform: translate(-50%, -50%);
+  font-size: 20px;
+  pointer-events: none;
+  opacity: 0.8;
+}
+
+.rating-container {
+  margin: 20px 0;
+}
+
+.rating-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.rating-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid #66bb6a;
+  background: white;
+  color: #66bb6a;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+}
+
+.rating-btn:hover {
+  background: #66bb6a;
+  color: white;
+}
+
+.rating-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #f0f0f0;
+  color: #999;
+  border-color: #ccc;
+}
+
+.rating-info {
+  margin-top: 10px;
+  font-size: 0.9em;
+  color: #666;
+}
+
+.badge-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transform: translateX(200%);
+  transition: transform 0.3s ease-out;
+  z-index: 1000;
+  border-left: 5px solid #66bb6a;
+}
+
+.badge-notification.show {
+  transform: translateX(0);
+}
+
+.badge-notification img {
+  width: 40px;
+  height: 40px;
+}
+
+.badge-notification .badge-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.badge-notification .badge-title {
+  font-weight: bold;
+  font-size: 1.1em;
+}
+
+.badge-notification .badge-desc {
+  font-size: 0.8em;
+  color: #666;
+}
+
+#duck-image {
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+#duck-image:hover {
+  transform: scale(1.02);
+}
+
+#duck-image:active {
+  transform: scale(0.98);
+}
+
+/* Achievements Menu Styles */
+.achievements-menu {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+}
+
+.menu-button {
+  background: #66bb6a;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.menu-button:hover {
+  background: #4caf50;
+}
+
+.achievements-panel {
+  position: absolute;
+  top: 50px;
+  right: 0;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  padding: 15px;
+  width: 300px;
+  max-height: 80vh;
+  overflow-y: auto;
+  display: none;
+}
+
+.achievements-panel.show {
+  display: block;
+}
+
+.achievements-panel h3 {
+  margin-top: 0;
+  color: #66bb6a;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+.badge-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.badge-item.locked {
+  opacity: 0.5;
+}
+
+.badge-item img {
+  width: 40px;
+  height: 40px;
+}
+
+.badge-info {
+  flex-grow: 1;
+}
+
+.badge-name {
+  font-weight: bold;
+}
+
+.badge-desc {
+  font-size: 0.8em;
+  color: #666;
+}
