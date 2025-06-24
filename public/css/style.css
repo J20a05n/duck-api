@@ -26,6 +26,48 @@ button:hover {
   background-color: #4caf50;
 }
 
+/* Image attribution */
+.attribution {
+  font-size: 0.8em;
+  color: #666;
+  margin-top: 8px;
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 4px;
+  max-width: 30%;
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
+}
+
+/* Add subtle shadow for depth */
+.attribution {
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* Improve link styling */
+.attribution a {
+  color: #666;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.attribution a:hover {
+  color: #333;
+  border-bottom-color: #666;
+}
+
+/* Enhance title and author styling */
+.attribution .title {
+  font-weight: 500;
+  color: #444;
+}
+
+.attribution .author {
+  color: #888;
+  font-style: italic;
+}
+
 /* New duck button styles */
 #new-duck-button {
   width: 300px;

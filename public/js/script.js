@@ -1,3 +1,14 @@
+async function loadCredits() {
+  try {
+    const response = await fetch('/api/credits');
+    const credits = await response.json();
+    return credits;
+  } catch (error) {
+    console.error('Error loading credits:', error);
+    return {};
+  }
+}
+
 let earnedBadges = JSON.parse(sessionStorage.getItem('earnedBadges') || '[]');
 let badges = {};
 
@@ -101,6 +112,7 @@ function disableAllRatingButtons() {
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', async () => {
+    const credits = await loadCredits();
     await loadBadges();
     updateBadgesList();
     updateNewDuckButton();
@@ -128,6 +140,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                     ratingInfo.textContent = `Average rating: ${data.average} (from ${data.count} votes)`;
                 }
             });
+        const fileName = duckImage.src.split('/').pop();
+        const credit = credits[fileName];
+        if (credit) {
+        const attribution = document.getElementById('attribution');
+        attribution.innerHTML = `
+            <span class="title">${credit.title}</span>
+            by <span class="author">${credit.author}</span>
+            (<a href="${credit.source}" target="_blank" class="source">${credit.license}</a>)
+        `;
+        }
     });
 
     // Handle rating clicks

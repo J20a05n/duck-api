@@ -478,6 +478,17 @@ app.post('/api/user/add-points', (req, res) => {
 });
 //#endregion store
 
+app.get('/api/credits', (req, res) => {
+  const creditsFile = path.join(__dirname, 'credits.json');
+  try {
+    const data = fs.readFileSync(creditsFile, 'utf8');
+    res.json(JSON.parse(data));
+  } catch (err) {
+    console.error('Error reading credits file:', err);
+    res.status(500).json({});
+  }
+});
+
 // API Endpoint: Returns random duck as JSON
 // Use in terminal: curl "https://duck-api.j-p-k.de/api/duck"
 app.get('/api/duck', (req, res) => {
