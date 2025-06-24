@@ -164,6 +164,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 // Disable all rating buttons
                 disableAllRatingButtons();
+                await updateUserStats();
                 
                 // Show badge notification if earned
                 if (result.newBadge) {
@@ -203,6 +204,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     })
                 });
                 const result = await response.json();
+                await updateUserStats();
                 
                 // Update sessionStorage with earned badges
                 if (result.newBadge) {
@@ -234,4 +236,113 @@ document.addEventListener('DOMContentLoaded', async () => {
             achievementsPanel.classList.remove('show');
         }
     });
+});
+
+//#region Leaderboard
+// Leaderboard functionality
+let currentUser = null;
+
+async function initializeUser() {
+  try {
+    const response = await fetch('/api/leaderboard/user');
+    currentUser = await response.json();
+    sessionStorage.setItem('userId', currentUser.id);
+    updateUserStats();
+  } catch (error) {
+    console.error('Error initializing user:', error);
+  }
+}
+
+async function updateUserStats() {
+  if (!currentUser) return;
+  
+  try {
+    const response = await fetch('/api/leaderboard/update', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        clicks: parseInt(sessionStorage.duckClicks || '0'),
+        ducksRated: JSON.parse(sessionStorage.getItem('earnedBadges') || '[]')
+          .filter(b => b.includes('Duck') && !b.includes('Click')).length
+      })
+    });
+    
+    if (response.ok) {
+      loadLeaderboard();
+    }
+  } catch (error) {
+    console.error('Error updating user stats:', error);
+  }
+}
+
+async function loadLeaderboard() {
+  try {
+    const response = await fetch('/api/leaderboard');
+    const leaderboard = await response.json();
+    
+    // Update user stats display
+    const userStatsElement = document.getElementById('user-stats');
+    const user = leaderboard.find(u => u.id === currentUser?.id);
+    
+    if (user) {
+      userStatsElement.innerHTML = `
+        <h4>Your Stats (${user.username})</h4>
+        <div>Ducks Clicked: ${user.clicks}</div>
+        <div>Ducks Rated: ${user.ducksRated}</div>
+        <div>Rank: #${leaderboard.findIndex(u => u.id === user.id) + 1}</div>
+      `;
+    }
+    
+    // Update leaderboard list
+    const leaderboardList = document.getElementById('leaderboard-list');
+    leaderboardList.innerHTML = '';
+    
+    leaderboard.slice(0, 20).forEach((user, index) => {
+      const item = document.createElement('div');
+      item.className = `leaderboard-item ${user.id === currentUser?.id ? 'you' : ''}`;
+      item.innerHTML = `
+        <div class="rank">${index + 1}</div>
+        <div class="username">${user.username}</div>
+        <div class="stats">
+          <div class="stat">${user.clicks}🦆</div>
+          <div class="stat">${user.ducksRated}⭐</div>
+        </div>
+      `;
+      leaderboardList.appendChild(item);
+    });
+  } catch (error) {
+    console.error('Error loading leaderboard:', error);
+  }
+}
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', async () => {
+    // Initialize leaderboard elements
+    const leaderboardButton = document.getElementById('leaderboard-button');
+    const leaderboardPanel = document.getElementById('leaderboard-panel');
+  
+    // Initialize user
+    await initializeUser();
+  
+    // Leaderboard button click handler
+    leaderboardButton.addEventListener('click', async () => {
+        await loadLeaderboard();
+        leaderboardPanel.classList.toggle('show');
+    });
+    
+    // Close menu when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!leaderboardButton.contains(e.target) && !leaderboardPanel.contains(e.target)) {
+        leaderboardPanel.classList.remove('show');
+        }
+    });
+    
+    // Update leaderboard when rating ducks
+    // Add this inside your rating click handler:
+    
+    // Update leaderboard when clicking ducks
+    // Add this inside your duck image click handler:
+    // await updateUserStats();
 });

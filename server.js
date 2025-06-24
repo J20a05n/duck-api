@@ -204,7 +204,7 @@ app.post('/api/click-badge', (req, res) => {
     
     let newBadge = null;
     if (clickCount === 1 && !req.session.earnedBadges?.includes('Duck Clicker')) {
-        newBadge = badges.first_click;
+        newBadge = badges['first_click'];
         if (!req.session.earnedBadges) req.session.earnedBadges = [];
         req.session.earnedBadges.push(newBadge.name);
     } else if (clickCount >= 50 && !req.session.earnedBadges?.includes('Duck Whisperer')) {
@@ -228,6 +228,126 @@ app.post('/api/click-badge', (req, res) => {
     });
 });
 //#endregion click-badge
+
+//#region leaderboard
+// Path for leaderboard JSON file
+const leaderboardFile = path.join(__dirname, 'leaderboard.json');
+
+// Initialize leaderboard file if it doesn't exist
+if (!fs.existsSync(leaderboardFile)) {
+  fs.writeFileSync(leaderboardFile, '[]');
+}
+
+// Helper function to read leaderboard
+function readLeaderboard() {
+  try {
+    const data = fs.readFileSync(leaderboardFile, 'utf8');
+    return JSON.parse(data);
+  } catch (err) {
+    console.error('Error reading leaderboard file:', err);
+    return [];
+  }
+}
+
+// Helper function to write leaderboard
+function writeLeaderboard(leaderboard) {
+  try {
+    fs.writeFileSync(leaderboardFile, JSON.stringify(leaderboard, null, 2));
+  } catch (err) {
+    console.error('Error writing leaderboard file:', err);
+  }
+}
+
+// Duck-related names for random assignment
+const duckNames = [
+  "Quackers", "Waddles", "Puddles", "Daffy", "Howard", "Mallard", 
+  "Feathers", "Bill", "Webby", "Floaty", "Splash", "Bubbles",
+  "Rainbow", "Sunny", "Pebbles", "Ripple", "Ducky", "Donald",
+  "Goose", "Paddle", "Drizzle", "Misty", "Squeaky", "Chirpy"
+];
+
+// Generate a random duck username
+function generateDuckUsername() {
+  const name = duckNames[Math.floor(Math.random() * duckNames.length)];
+  const num = Math.floor(Math.random() * 1000);
+  return `${name}#${num.toString().padStart(3, '0')}`;
+}
+
+// Get or create user in leaderboard
+app.get('/api/leaderboard/user', (req, res) => {
+  let leaderboard = readLeaderboard();
+  
+  // Check if user already has an ID in session
+  if (!req.session.userId) {
+    // Create new user
+    const newUser = {
+      id: Date.now().toString(),
+      username: generateDuckUsername(),
+      clicks: 0,
+      ducksRated: 0,
+      lastActive: new Date().toISOString()
+    };
+    
+    // Add to leaderboard
+    leaderboard.push(newUser);
+    writeLeaderboard(leaderboard);
+    
+    // Store user ID in session
+    req.session.userId = newUser.id;
+  }
+  
+  // Find user in leaderboard
+  const user = leaderboard.find(u => u.id === req.session.userId);
+  
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+  
+  res.json(user);
+});
+
+// Update user stats
+app.post('/api/leaderboard/update', (req, res) => {
+  const { clicks, ducksRated } = req.body;
+  
+  if (!req.session.userId) {
+    return res.status(400).json({ error: 'User not initialized' });
+  }
+  
+  let leaderboard = readLeaderboard();
+  const userIndex = leaderboard.findIndex(u => u.id === req.session.userId);
+  
+  if (userIndex === -1) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+  
+  // Update stats
+  if (clicks !== undefined) {
+    leaderboard[userIndex].clicks = Math.max(leaderboard[userIndex].clicks, clicks);
+  }
+  if (ducksRated !== undefined) {
+    leaderboard[userIndex].ducksRated = Math.max(leaderboard[userIndex].ducksRated, ducksRated);
+  }
+  
+  leaderboard[userIndex].lastActive = new Date().toISOString();
+  writeLeaderboard(leaderboard);
+  
+  res.json({ success: true });
+});
+
+// Get full leaderboard
+app.get('/api/leaderboard', (req, res) => {
+  let leaderboard = readLeaderboard();
+  
+  // Sort by clicks (descending), then by ducks rated (descending)
+  leaderboard.sort((a, b) => {
+    if (b.clicks !== a.clicks) return b.clicks - a.clicks;
+    return b.ducksRated - a.ducksRated;
+  });
+  
+  res.json(leaderboard);
+});
+//#endregion leaderboard
 
 // API Endpoint: Returns random duck as JSON
 // Use in terminal: curl "https://duck-api.j-p-k.de/api/duck"

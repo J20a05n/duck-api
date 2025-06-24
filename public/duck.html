@@ -7,44 +7,59 @@
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-  <audio id="quack-sound" src="/sounds/quack.mp3" preload="auto"></audio>
-  <h1>Here's a duck for you 🦆</h1>
-  <img src="" alt="Random duck" id="duck-image" />
-  <div class="rating-container">
-    <div>Rate this duck:</div>
-    <div class="rating-buttons" id="rating-buttons">
-      <button class="rating-btn" data-rating="1">1</button>
-      <button class="rating-btn" data-rating="2">2</button>
-      <button class="rating-btn" data-rating="3">3</button>
-      <button class="rating-btn" data-rating="4">4</button>
-      <button class="rating-btn" data-rating="5">5</button>
-      <button class="rating-btn" data-rating="6">6</button>
-      <button class="rating-btn" data-rating="7">7</button>
-      <button class="rating-btn" data-rating="8">8</button>
-      <button class="rating-btn" data-rating="9">9</button>
-      <button class="rating-btn" data-rating="10">10</button>
+    <audio id="quack-sound" src="/sounds/quack.mp3" preload="auto"></audio>
+    <h1>Here's a duck for you 🦆</h1>
+    <img src="" alt="Random duck" id="duck-image" />
+    <div class="rating-container">
+        <div>Rate this duck:</div>
+        <div class="rating-buttons" id="rating-buttons">
+        <button class="rating-btn" data-rating="1">1</button>
+        <button class="rating-btn" data-rating="2">2</button>
+        <button class="rating-btn" data-rating="3">3</button>
+        <button class="rating-btn" data-rating="4">4</button>
+        <button class="rating-btn" data-rating="5">5</button>
+        <button class="rating-btn" data-rating="6">6</button>
+        <button class="rating-btn" data-rating="7">7</button>
+        <button class="rating-btn" data-rating="8">8</button>
+        <button class="rating-btn" data-rating="9">9</button>
+        <button class="rating-btn" data-rating="10">10</button>
+        </div>
+        <div class="rating-info" id="rating-info"></div>
     </div>
-    <div class="rating-info" id="rating-info"></div>
-  </div>
-  <br>
-  <form method="get" action="/duck">
-    <button type="submit" id="new-duck-button">New Duck</button>
-  </form>
+    <br>
+    <form method="get" action="/duck">
+        <button type="submit" id="new-duck-button">New Duck</button>
+    </form>
 
-  <!-- Achievements Menu -->
-  <div class="achievements-menu">
-    <button class="menu-button" id="menu-button">🏆</button>
-    <div class="achievements-panel" id="achievements-panel">
-      <h3>Your Achievements</h3>
-      <div id="badges-list">
-        <!-- Badges will be populated here -->
-      </div>
+    <!-- Achievements and Leaderboard Menu -->
+    <div class="menu-container">
+    <div class="achievements-menu">
+        <button class="menu-button" id="menu-button">🏆</button>
+        <div class="achievements-panel" id="achievements-panel">
+        <h3>Your Achievements</h3>
+        <div id="badges-list">
+            <!-- Badges will be populated here -->
+        </div>
+        </div>
     </div>
-  </div>
 
-  <div id="badge-notification-container"></div>
+    <div class="leaderboard-menu">
+        <button class="menu-button" id="leaderboard-button">📊</button>
+        <div class="leaderboard-panel" id="leaderboard-panel">
+        <h3>Duck Leaderboard</h3>
+        <div class="user-stats" id="user-stats">
+            <!-- User stats will be populated here -->
+        </div>
+        <div class="leaderboard-list" id="leaderboard-list">
+            <!-- Leaderboard will be populated here -->
+        </div>
+        </div>
+    </div>
+    </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
-  <script src="/js/script.js"></script>
+    <div id="badge-notification-container"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <script src="/js/script.js"></script>
 </body>
 </html>

@@ -1,4 +1,5 @@
 /node_modules
 ratings.json
+leaderboard.json
 .env
 .DS_Store
