@@ -33,28 +33,46 @@
 
     <!-- Achievements and Leaderboard Menu -->
     <div class="menu-container">
-    <div class="achievements-menu">
-        <button class="menu-button" id="menu-button">🏆</button>
-        <div class="achievements-panel" id="achievements-panel">
-        <h3>Your Achievements</h3>
-        <div id="badges-list">
-            <!-- Badges will be populated here -->
+        <div class="achievements-menu">
+            <button class="menu-button" id="menu-button">🏆</button>
+            <div class="achievements-panel" id="achievements-panel">
+            <h3>Your Achievements</h3>
+            <div id="badges-list">
+                <!-- Badges will be populated here -->
+            </div>
+            </div>
         </div>
+
+        <div class="leaderboard-menu">
+            <button class="menu-button" id="leaderboard-button">📊</button>
+            <div class="leaderboard-panel" id="leaderboard-panel">
+            <h3>Duck Leaderboard</h3>
+            <div class="user-stats" id="user-stats">
+                <!-- User stats will be populated here -->
+            </div>
+            <div class="leaderboard-list" id="leaderboard-list">
+                <!-- Leaderboard will be populated here -->
+            </div>
+            </div>
         </div>
+
+        <!-- Store Menu -->
+        <div class="store-menu">
+            <button class="menu-button" id="store-button">🛒</button>
+            <div class="store-panel" id="store-panel">
+                <h3>Duck Store</h3>
+                <div class="points-display">Points: <span id="user-points">0</span></div>
+                <div class="store-items" id="store-items">
+                <!-- Items will be populated here -->
+                </div>
+            </div>
+        </div>
+
     </div>
 
-    <div class="leaderboard-menu">
-        <button class="menu-button" id="leaderboard-button">📊</button>
-        <div class="leaderboard-panel" id="leaderboard-panel">
-        <h3>Duck Leaderboard</h3>
-        <div class="user-stats" id="user-stats">
-            <!-- User stats will be populated here -->
-        </div>
-        <div class="leaderboard-list" id="leaderboard-list">
-            <!-- Leaderboard will be populated here -->
-        </div>
-        </div>
-    </div>
+    <!-- Duck Pet (hidden by default) -->
+    <div id="duck-pet" class="duck-pet" style="display: none;">
+        <img src="/assets/duck-pet.png" alt="Pet Duck">
     </div>
 
     <div id="badge-notification-container"></div>

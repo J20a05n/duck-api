@@ -290,7 +290,7 @@ button:hover {
 .achievements-menu {
   position: fixed;
   top: 20px;
-  right: 80px;
+  right: 120px;
   z-index: 1000;
 }
 
@@ -367,4 +367,115 @@ button:hover {
 .badge-desc {
   font-size: 0.8em;
   color: #666;
+}
+
+/* Store Menu */
+.store-menu {
+  position: relative;
+}
+
+.store-panel {
+  position: absolute;
+  top: 60px;
+  right: 0;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  padding: 15px;
+  width: 300px;
+  max-height: 80vh;
+  overflow-y: auto;
+  display: none;
+}
+
+.store-panel.show {
+  display: block;
+}
+
+.store-panel h3 {
+  margin-top: 0;
+  color: #66bb6a;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+.points-display {
+  font-weight: bold;
+  margin-bottom: 15px;
+  font-size: 1.1em;
+}
+
+.store-item {
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+.store-item h4 {
+  margin: 0 0 5px 0;
+}
+
+.store-item .price {
+  color: #66bb6a;
+  font-weight: bold;
+}
+
+.store-item button {
+  background: #66bb6a;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.store-item button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.store-item.owned {
+  background: #f0fff0;
+}
+
+/* Duck Pet */
+.duck-pet {
+  position: fixed;
+  width: 60px;
+  height: 60px;
+  pointer-events: none;
+  z-index: 9999;
+  right: 20px;
+  bottom: 20px;
+  transition: 
+    transform 0.3s ease-out,
+    left 0.5s cubic-bezier(0.2, 0.8, 0.4, 1),
+    top 0.5s cubic-bezier(0.2, 0.8, 0.4, 1);
+}
+
+.duck-pet img {
+  width: 100%;
+  height: 100%;
+  animation: float 2s ease-in-out infinite;
+}
+
+/* Floating animation */
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(-5deg); }
+  25% { transform: translateY(-5px) rotate(5deg); }
+  50% { transform: translateY(-10px) rotate(-5deg); }
+  75% { transform: translateY(-5px) rotate(5deg); }
+}
+
+/* Waddle animation when moving */
+@keyframes waddle {
+  0%, 100% { transform: rotate(-10deg); }
+  50% { transform: rotate(10deg); }
+}
+
+/* Duck Cursor */
+body.duck-cursor, 
+body.duck-cursor * {
+  cursor: url('../assets/duck-cursor.png') 16 4, auto !important;
 }

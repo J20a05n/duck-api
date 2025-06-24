@@ -349,6 +349,135 @@ app.get('/api/leaderboard', (req, res) => {
 });
 //#endregion leaderboard
 
+//#region store
+// Path for user data JSON file
+const usersFile = path.join(__dirname, 'users.json');
+
+// Initialize users file if it doesn't exist
+if (!fs.existsSync(usersFile)) {
+  fs.writeFileSync(usersFile, '{}');
+}
+
+// Store items
+const storeItems = {
+  quack_sound: {
+    id: "quack_sound",
+    name: "Premium Quack",
+    description: "A fancy new quack sound effect!",
+    price: 50,
+    type: "sound"
+  },
+  duck_cursor: {
+    id: "duck_cursor",
+    name: "Duck Cursor",
+    description: "Make your cursor more ducky!",
+    price: 100,
+    type: "cursor"
+  },
+  duck_pet: {
+    id: "duck_pet",
+    name: "Duck Pet",
+    description: "A little duck that follows your mouse!",
+    price: 500,
+    type: "pet"
+  }
+};
+
+app.get('/api/store/items', (req, res) => {
+  res.json(storeItems); 
+});
+
+// Helper function to read user data
+function readUserData() {
+  try {
+    const data = fs.readFileSync(usersFile, 'utf8');
+    return JSON.parse(data);
+  } catch (err) {
+    console.error('Error reading user data:', err);
+    return {};
+  }
+}
+
+// Helper function to write user data
+function writeUserData(data) {
+  try {
+    fs.writeFileSync(usersFile, JSON.stringify(data, null, 2));
+  } catch (err) {
+    console.error('Error writing user data:', err);
+  }
+}
+
+// Get user's points and unlocked items
+app.get('/api/user/inventory', (req, res) => {
+  if (!req.session.userId) {
+    return res.status(400).json({ error: 'User not initialized' });
+  }
+
+  const users = readUserData();
+  const user = users[req.session.userId] || { 
+    points: 0, 
+    inventory: [] 
+  };
+
+  res.json(user);
+});
+
+// Purchase item
+app.post('/api/store/purchase', (req, res) => {
+  const { itemId } = req.body;
+  
+  if (!req.session.userId || !storeItems[itemId]) {
+    return res.status(400).json({ error: 'Invalid request' });
+  }
+
+  const users = readUserData();
+  const user = users[req.session.userId] || { points: 0, inventory: [] };
+
+  // Check if already owned
+  if (user.inventory.includes(itemId)) {
+    return res.status(400).json({ error: 'Item already owned' });
+  }
+
+  // Check if enough points
+  if (user.points < storeItems[itemId].price) {
+    return res.status(400).json({ error: 'Not enough points' });
+  }
+
+  // Deduct points and add to inventory
+  user.points -= storeItems[itemId].price;
+  user.inventory.push(itemId);
+  users[req.session.userId] = user;
+  writeUserData(users);
+
+  res.json({ 
+    success: true, 
+    newPoints: user.points,
+    inventory: user.inventory 
+  });
+});
+
+// Update user points (call this when rating ducks)
+app.post('/api/user/add-points', (req, res) => {
+  const { points } = req.body;
+  
+  if (!req.session.userId || !points) {
+    return res.status(400).json({ error: 'Invalid request' });
+  }
+
+  const users = readUserData();
+  const user = users[req.session.userId] || { points: 0, inventory: [] };
+
+  user.points += parseInt(points);
+  users[req.session.userId] = user;
+  writeUserData(users);
+
+  res.json({ 
+    success: true, 
+    newPoints: user.points 
+  });
+});
+//#endregion store
+
 // API Endpoint: Returns random duck as JSON
 // Use in terminal: curl "https://duck-api.j-p-k.de/api/duck"
 app.get('/api/duck', (req, res) => {

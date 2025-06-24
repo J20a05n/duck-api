@@ -165,6 +165,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 // Disable all rating buttons
                 disableAllRatingButtons();
                 await updateUserStats();
+                await addPoints(rating);
                 
                 // Show badge notification if earned
                 if (result.newBadge) {
@@ -183,9 +184,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Track duck clicks
     duckImage.addEventListener('click', async function() {
-        // Play quack sound
-        quackSound.currentTime = 0;
-        quackSound.play();
+        if (userInventory.includes('quack_sound')) {
+            // Play premium quack sound
+            const premiumQuack = new Audio('/sounds/premium-quack.mp3');
+            premiumQuack.play();
+        } else {
+            // Play default sound
+            quackSound.currentTime = 0;
+            quackSound.play();
+        }
         
         // Increment click count
         const clickCount = parseInt(sessionStorage.duckClicks || '0') + 1;
@@ -338,11 +345,205 @@ document.addEventListener('DOMContentLoaded', async () => {
         leaderboardPanel.classList.remove('show');
         }
     });
-    
-    // Update leaderboard when rating ducks
-    // Add this inside your rating click handler:
-    
-    // Update leaderboard when clicking ducks
-    // Add this inside your duck image click handler:
-    // await updateUserStats();
 });
+//#endregion Leaderboard
+
+//#region Store
+// Store functionality
+let userPoints = 0;
+let userInventory = [];
+
+async function loadStore() {
+  // Load user data
+  try {
+    const response = await fetch('/api/user/inventory');
+    const data = await response.json();
+    userPoints = data.points || 0;
+    userInventory = data.inventory || [];
+    updateStoreUI();
+  } catch (error) {
+    console.error('Error loading store:', error);
+  }
+}
+
+let storeItems = {};
+
+async function loadStoreItems() {
+  try {
+    const response = await fetch('/api/store/items');
+    storeItems = await response.json();
+  } catch (error) {
+    console.error('Error loading store items:', error);
+  }
+}
+
+function updateStoreUI() {
+  // Update points display
+  document.getElementById('user-points').textContent = userPoints;
+  
+  // Update store items
+  const storeItemsContainer = document.getElementById('store-items');
+  storeItemsContainer.innerHTML = '';
+  
+  Object.values(storeItems).forEach(item => {
+    const isOwned = userInventory.includes(item.id);
+    const canAfford = userPoints >= item.price && !isOwned;
+    
+    const itemElement = document.createElement('div');
+    itemElement.className = `store-item ${isOwned ? 'owned' : ''}`;
+    itemElement.innerHTML = `
+      <h4>${item.name}</h4>
+      <p>${item.description}</p>
+      <div class="price">Price: ${item.price} points</div>
+      <button ${isOwned ? 'disabled' : canAfford ? '' : 'disabled'}>
+        ${isOwned ? 'Owned ✓' : 'Buy'}
+      </button>
+    `;
+    
+    if (!isOwned && canAfford) {
+      const button = itemElement.querySelector('button');
+      button.addEventListener('click', () => purchaseItem(item.id));
+    }
+    
+    storeItemsContainer.appendChild(itemElement);
+  });
+  
+  // Apply owned items
+  applyInventoryItems();
+}
+
+async function purchaseItem(itemId) {
+  try {
+    const response = await fetch('/api/store/purchase', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ itemId })
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      userPoints = result.newPoints;
+      userInventory = result.inventory;
+      updateStoreUI();
+      
+      // Show confetti for purchase
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+    }
+  } catch (error) {
+    console.error('Error purchasing item:', error);
+  }
+}
+
+function applyInventoryItems() {
+  // Apply duck cursor
+  if (userInventory.includes('duck_cursor')) {
+    document.body.classList.add('duck-cursor');
+  }
+  
+  // Show duck pet
+  if (userInventory.includes('duck_pet')) {
+    const duckPet = document.getElementById('duck-pet');
+    duckPet.style.display = 'block';
+    duckPetActive = true;
+    
+    // Start position at bottom right
+    duckPet.style.right = '20px';
+    duckPet.style.bottom = '20px';
+    duckPet.style.left = 'auto';
+    duckPet.style.top = 'auto';
+    
+    // Start the animation loop
+    updateDuckPetPosition();
+  }
+}
+
+async function addPoints(amount) {
+  try {
+    const response = await fetch('/api/user/add-points', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ points: amount })
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      userPoints = result.newPoints;
+      updateStoreUI();
+    }
+  } catch (error) {
+    console.error('Error adding points:', error);
+  }
+}
+
+// Initialize store when DOM loads
+document.addEventListener('DOMContentLoaded', async () => {
+    // Initialize store
+    const storeButton = document.getElementById('store-button');
+    const storePanel = document.getElementById('store-panel');
+
+    await loadStoreItems();
+    await initializeUser();
+    loadStore();
+    
+    storeButton.addEventListener('click', async () => {
+        await loadStore();
+        storePanel.classList.toggle('show');
+    });
+    
+    // Close menu when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!storeButton.contains(e.target) && !storePanel.contains(e.target)) {
+        storePanel.classList.remove('show');
+        }
+    });
+});
+
+// duck movement
+let duckPetActive = false;
+let mouseX = window.innerWidth / 2;
+let mouseY = window.innerHeight / 2;
+let duckPetOffsetX = 0;
+let duckPetOffsetY = 0;
+
+// Add this function to create dynamic movement
+function updateDuckPetPosition() {
+  if (!duckPetActive) return;
+  
+  const duckPet = document.getElementById('duck-pet');
+  if (!duckPet) return;
+  
+  // Calculate position with dynamic offset
+  duckPetOffsetX = Math.sin(Date.now() / 300) * 30; // Horizontal sway
+  duckPetOffsetY = Math.cos(Date.now() / 400) * 20; // Vertical float
+  
+  // Apply movement with easing
+  duckPet.style.left = `${mouseX + 15 + duckPetOffsetX}px`;
+  duckPet.style.top = `${mouseY + 15 + duckPetOffsetY}px`;
+  
+  // Add waddle animation when moving
+  duckPet.style.transform = `rotate(${Math.sin(Date.now() / 200) * 10}deg)`;
+  
+  requestAnimationFrame(updateDuckPetPosition);
+}
+
+// Modify your mouse movement handler
+document.addEventListener('mousemove', (e) => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+  
+  // Only follow if pet is active
+  if (duckPetActive) {
+    updateDuckPetPosition();
+  }
+});
+//#endregion Store
