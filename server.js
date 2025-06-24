@@ -489,16 +489,57 @@ app.get('/api/credits', (req, res) => {
   }
 });
 
+// Helper function to read credits file
+function getCredits() {
+    const creditsFile = path.join(__dirname, 'credits.json');
+    try {
+        const data = fs.readFileSync(creditsFile, 'utf8');
+        return JSON.parse(data);
+    } catch (err) {
+        console.error('Error reading credits file:', err);
+        return {};
+    }
+}
+
 // API Endpoint: Returns random duck as JSON
 // Use in terminal: curl "https://duck-api.j-p-k.de/api/duck"
 app.get('/api/duck', (req, res) => {
-  if (duckImages.length === 0) {
-    return res.status(500).json({ error: 'No duck images found' });
-  }
+    // Check if we have duck images
+    if (duckImages.length === 0) {
+        return res.status(500).json({ 
+            error: 'No duck images found',
+            attribution: null 
+        });
+    }
 
-  const randomDuck = duckImages[Math.floor(Math.random() * duckImages.length)];
-  const fullUrl = `${req.protocol}://${req.get('host')}${randomDuck}`;
-  res.json({ image: fullUrl });
+    // Select random duck image
+    const randomDuck = duckImages[Math.floor(Math.random() * duckImages.length)];
+    
+    // Extract filename from URL path
+    const fileName = randomDuck.split('/').pop();
+
+    // Get credits information
+    const credits = getCredits();
+    
+    // Prepare attribution data
+    let attribution = null;
+    if (credits[fileName]) {
+        attribution = {
+            title: credits[fileName].title,
+            author: credits[fileName].author,
+            license: credits[fileName].license,
+            source: credits[fileName].source
+        };
+    }
+
+    // Construct full URL
+    const fullUrl = `${req.protocol}://${req.get('host')}${randomDuck}`;
+
+    // Return response with attribution
+    res.json({
+        image: fullUrl,
+        attribution: attribution
+    });
 });
 
 // Web Page Endpoint: Renders the main page
