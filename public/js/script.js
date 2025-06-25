@@ -191,8 +191,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 
                 // Show badge notification if earned
                 if (result.newBadge) {
-                    earnedBadges.push(result.newBadge.name);
-                    sessionStorage.setItem('earnedBadges', JSON.stringify(earnedBadges));
+                    sessionStorage.setItem('earnedBadges', JSON.stringify(result.earnedBadges));
+
                     showBadgeNotification(result.newBadge);
                     updateBadgesList();
                     updateNewDuckButton();
@@ -237,9 +237,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 
                 // Update sessionStorage with earned badges
                 if (result.newBadge) {
-                    const earnedBadges = JSON.parse(sessionStorage.getItem('earnedBadges') || '[]');
-                    earnedBadges.push(result.newBadge.name);
-                    sessionStorage.setItem('earnedBadges', JSON.stringify(earnedBadges));
+                    sessionStorage.setItem('earnedBadges', JSON.stringify(result.earnedBadges));
                     
                     // Show notification and update UI
                     showBadgeNotification(result.newBadge);

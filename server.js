@@ -166,7 +166,8 @@ app.post('/api/rate', (req, res) => {
         averageRating: calculateAverage(ratings[imageUrl]),
         count: ratings[imageUrl].length,
         ratedCount: ratedCount,
-        newBadge: newBadge || null
+        newBadge: newBadge || null,
+        earnedBadges: req.session.earnedBadges || []
     });
 });
 
@@ -224,7 +225,8 @@ app.post('/api/click-badge', (req, res) => {
     res.json({
         success: true,
         newBadge: newBadge || null,
-        totalClicks: req.session.duckClicks
+        totalClicks: req.session.duckClicks,
+        earnedBadges: req.session.earnedBadges || []
     });
 });
 //#endregion click-badge
