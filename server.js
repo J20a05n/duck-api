@@ -147,6 +147,19 @@ app.post('/api/rate', (req, res) => {
     ratedDucksSet.add(imageUrl);
     req.session.ratedDucks = Array.from(ratedDucksSet);
     const ratedCount = req.session.ratedDucks.length;
+
+    // Update leaderboard 
+    let leaderboard = readLeaderboard();
+    const userIndex = leaderboard.findIndex(u => u.id === req.session.userId);
+
+    if (userIndex !== -1) {
+        // Only increment if this is a new duck rating
+        if (ratedCount > leaderboard[userIndex].ducksRated) {
+            leaderboard[userIndex].ducksRated = ratedCount;
+            leaderboard[userIndex].lastActive = new Date().toISOString();
+            writeLeaderboard(leaderboard);
+        }
+    }
     
     // Check for new badges
     let newBadge = null;
