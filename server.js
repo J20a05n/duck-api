@@ -70,8 +70,11 @@ app.use(session({
   resave: false,
   saveUninitialized: true,
   cookie: { 
-    secure: process.env.NODE_ENV === 'production' 
-  }
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    httpOnly: true
+  },
+  proxy: process.env.NODE_ENV === 'production'
 }));
 //#endregion middleware
 
