@@ -26,23 +26,25 @@ button:hover {
   background-color: #4caf50;
 }
 
+.attribution-container {
+  width: 100%;
+  text-align: center;
+}
+
 /* Image attribution */
 .attribution {
   font-size: 0.8em;
   color: #666;
   margin-top: 8px;
-  padding: 4px;
+  padding: 4px 8px;
   background: rgba(255, 255, 255, 0.9);
   border-radius: 4px;
-  max-width: 30%;
+  display: inline-block;
   margin-left: auto;
   margin-right: auto;
-  display: block;
-}
-
-/* Add subtle shadow for depth */
-.attribution {
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  text-align: center;
+  max-width: 90%;
 }
 
 /* Improve link styling */
